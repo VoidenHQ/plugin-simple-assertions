@@ -1,6 +1,6 @@
 {
   "name": "@voiden/plugin-simple-assertions",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "private": false,
   "description": "Add simple assertion testing to your HTTP requests with an easy-to-use table interface",
@@ -10,12 +10,12 @@
     "release": "node build.mjs && node generate-manifest.mjs"
   },
   "peerDependencies": {
-    "@voiden/sdk": "^1.0.10-beta.1",
+    "@voiden/sdk": "1.0.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@voiden/sdk": "1.0.10-beta.1",
+    "@voiden/sdk": "1.0.10",
     "esbuild": "^0.20.0",
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
