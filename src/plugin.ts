@@ -152,31 +152,34 @@ export default function createSimpleAssertionsPlugin(context: PluginContext) {
       });
 
       // Register pre-processing hook to capture editor document
+      const expandLinkedBlocksInDoc = (context as any).helpers?.expandLinkedBlocksInDoc;
       if (context.pipeline?.registerHook) {
         await context.pipeline.registerHook(
           "pre-processing",
-          async (context: any) => {
+          async (hookCtx: any) => {
             // Store editor JSON with expanded linked blocks in requestState for post-processing
-            if (context.editor) {
-              let editorJson = context.editor.getJSON();
+            if (hookCtx.editor) {
+              let editorJson = hookCtx.editor.getJSON();
 
               // Expand linked blocks so imported assertions are included
               try {
-                editorJson = await (context as any).helpers.expandLinkedBlocksInDoc(editorJson, { forceRefresh: true });
+                if (expandLinkedBlocksInDoc) {
+                  editorJson = await expandLinkedBlocksInDoc(editorJson, { forceRefresh: true });
+                }
               } catch (error) {
                 console.warn("[Simple Assertions] Failed to expand linked blocks:", error);
                 // Continue with unexpanded JSON
               }
 
-              if (!context.requestState) {
+              if (!hookCtx.requestState) {
                 console.error("[Simple Assertions] No requestState in context!");
                 return;
               }
 
-              if (!context.requestState.metadata) {
-                context.requestState.metadata = {};
+              if (!hookCtx.requestState.metadata) {
+                hookCtx.requestState.metadata = {};
               }
-              context.requestState.metadata.editorDocument = editorJson;
+              hookCtx.requestState.metadata.editorDocument = editorJson;
             }
           },
           5 // Run early
