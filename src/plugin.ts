@@ -208,6 +208,15 @@ export default function createSimpleAssertionsPlugin(context: PluginContext) {
         };
       }
 
+      // ── Help command ───────────────────────────────────────────────────────
+      const { SimpleAssertionsHelp } = await import('./help/index');
+      (context as any).registerHelpCommand?.({
+        id: 'simple-assertions.help',
+        label: 'Assertions',
+        description: 'Learn about validating API responses with assertions',
+        component: SimpleAssertionsHelp,
+      });
+
       // Expose helper functions for other plugins to use
       context.exposeHelpers({
         enhanceResponseWithAssertions,
