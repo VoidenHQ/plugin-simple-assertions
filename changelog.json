@@ -1,0 +1,37 @@
+[
+  {
+    "version": "v1.0.2",
+    "date": "29/05/2026",
+    "title": "Help Command",
+    "changes": {
+      "Added": [
+        "Register assertions help entry in the command palette"
+      ]
+    }
+  },
+  {
+    "version": "v1.0.1",
+    "date": "27/05/2026",
+    "title": "Shim Fix",
+    "changes": {
+      "Fixed": [
+        "Removed catch-all shim block that caused runtime bundle errors"
+      ]
+    }
+  },
+  {
+    "version": "v1.0.0",
+    "date": "01/04/2026",
+    "title": "Initial Release",
+    "description": "Simple response assertions for Voiden REST API testing.",
+    "changes": {
+      "Added": [
+        "Status code assertions (equals, in range)",
+        "Response body JSON path assertions",
+        "Response header assertions",
+        "Response time assertions",
+        "Visual pass/fail indicators in the response panel"
+      ]
+    }
+  }
+]
