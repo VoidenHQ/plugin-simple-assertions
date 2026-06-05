@@ -27,6 +27,7 @@ jobs:
         with:
           files: |
             dist/simple-assertions.js
+            dist/changelog.json
             dist/simple-assertions-runner.js
             src/skill.md
             manifest.json
