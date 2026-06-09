@@ -213,38 +213,45 @@ function executeOperator(operator: string, actualValue: any, expectedValue: stri
   const normalizedOp = operator.toLowerCase().trim();
 
   switch (normalizedOp) {
-    // Equality
+    // Equality — coerce to string for comparison, but undefined/null never equal a real value
     case 'equals':
     case 'eq':
     case '==':
     case '===':
+      if (actualValue === undefined || actualValue === null) return false;
       return String(actualValue) === expectedValue;
 
     case 'not-equals':
     case 'ne':
     case '!=':
     case '!==':
+      if (actualValue === undefined || actualValue === null) return false;
       return String(actualValue) !== expectedValue;
 
-    // String operations
+    // String operations — undefined/null have no string content
     case 'contains':
     case 'includes':
+      if (actualValue === undefined || actualValue === null) return false;
       return String(actualValue).includes(expectedValue);
 
     case 'not-contains':
     case 'not-includes':
+      if (actualValue === undefined || actualValue === null) return false;
       return !String(actualValue).includes(expectedValue);
 
     case 'starts-with':
     case 'startswith':
+      if (actualValue === undefined || actualValue === null) return false;
       return String(actualValue).startsWith(expectedValue);
 
     case 'ends-with':
     case 'endswith':
+      if (actualValue === undefined || actualValue === null) return false;
       return String(actualValue).endsWith(expectedValue);
 
     case 'matches':
     case 'regex':
+      if (actualValue === undefined || actualValue === null) return false;
       try {
         const regex = new RegExp(expectedValue);
         return regex.test(String(actualValue));
@@ -262,44 +269,50 @@ function executeOperator(operator: string, actualValue: any, expectedValue: stri
     case 'is-undefined':
       return actualValue === null || actualValue === undefined;
 
-    // Numeric comparisons
+    // Numeric comparisons — NaN means the value can't be compared numerically
     case 'greater-than':
     case 'gt':
-    case '>':
-      return Number(actualValue) > Number(expectedValue);
+    case '>': {
+      const a = Number(actualValue); const b = Number(expectedValue);
+      return !isNaN(a) && !isNaN(b) && a > b;
+    }
 
     case 'less-than':
     case 'lt':
-    case '<':
-      return Number(actualValue) < Number(expectedValue);
+    case '<': {
+      const a = Number(actualValue); const b = Number(expectedValue);
+      return !isNaN(a) && !isNaN(b) && a < b;
+    }
 
     case 'greater-equal':
     case 'gte':
-    case '>=':
-      return Number(actualValue) >= Number(expectedValue);
+    case '>=': {
+      const a = Number(actualValue); const b = Number(expectedValue);
+      return !isNaN(a) && !isNaN(b) && a >= b;
+    }
 
     case 'less-equal':
     case 'lte':
-    case '<=':
-      return Number(actualValue) <= Number(expectedValue);
+    case '<=': {
+      const a = Number(actualValue); const b = Number(expectedValue);
+      return !isNaN(a) && !isNaN(b) && a <= b;
+    }
 
-    // Empty checks
+    // Empty checks — "empty" means "" / [] / {}, NOT null or undefined
     case 'is-empty':
     case 'empty':
+      if (actualValue === null || actualValue === undefined) return false;
       if (Array.isArray(actualValue)) return actualValue.length === 0;
-      if (typeof actualValue === 'string') return actualValue.length === 0;
-      if (typeof actualValue === 'object' && actualValue !== null) {
-        return Object.keys(actualValue).length === 0;
-      }
-      return !actualValue;
+      if (typeof actualValue === 'string') return actualValue === '';
+      if (typeof actualValue === 'object') return Object.keys(actualValue).length === 0;
+      return false; // numbers, booleans — not a container, can't be empty
 
     case 'not-empty':
+      if (actualValue === null || actualValue === undefined) return false;
       if (Array.isArray(actualValue)) return actualValue.length > 0;
-      if (typeof actualValue === 'string') return actualValue.length > 0;
-      if (typeof actualValue === 'object' && actualValue !== null) {
-        return Object.keys(actualValue).length > 0;
-      }
-      return !!actualValue;
+      if (typeof actualValue === 'string') return actualValue !== '';
+      if (typeof actualValue === 'object') return Object.keys(actualValue).length > 0;
+      return true; // numbers, booleans — they have a value, not empty
 
     // Boolean checks
     case 'is-truthy':

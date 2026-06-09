@@ -212,13 +212,23 @@ export async function postProcessAssertionsHook(context: any): Promise<void> {
       }
     }
 
+    // Parse body from JSON string if needed — body.* field access requires an object
+    let parsedBody = responseState.body;
+    if (typeof parsedBody === 'string' && parsedBody.trim()) {
+      try {
+        parsedBody = JSON.parse(parsedBody);
+      } catch {
+        // Non-JSON body — keep as string
+      }
+    }
+
     // Build assertion context from response
     const assertionContext: AssertionContext = {
       response: {
         status: responseState.status,
         statusText: responseState.statusText,
         headers: responseState.headers || [],
-        body: responseState.body,
+        body: parsedBody,
         contentType: responseState.contentType,
         timing: responseState.timing,
       },

@@ -1,21 +1,15 @@
 [
   {
-    "version": "v1.0.2",
-    "date": "29/05/2026",
-    "title": "Help Command",
-    "changes": {
-      "Added": [
-        "Register assertions help entry in the command palette"
-      ]
-    }
-  },
-  {
     "version": "v1.0.1",
-    "date": "27/05/2026",
-    "title": "Shim Fix",
+    "date": "09/06/2026",
+    "title": "Assertion Engine & Body Parsing Fixes",
     "changes": {
       "Fixed": [
-        "Removed catch-all shim block that caused runtime bundle errors"
+        "null and undefined values no longer incorrectly pass equals, contains, starts-with, ends-with, and regex operators — they now consistently fail",
+        "Numeric comparison operators (greater-than, less-than, greater-equal, less-equal) no longer return incorrect results when either value is non-numeric — NaN inputs now always fail",
+        "Response body is now parsed from JSON string before field access, fixing body.* assertions on JSON responses",
+        "Removed catch-all shim block that caused runtime bundle errors",
+        "Register assertions help entry in the command palette"
       ]
     }
   },
