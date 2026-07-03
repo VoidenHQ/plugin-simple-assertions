@@ -15,13 +15,13 @@ content:
       - attrs: { disabled: false }
         row: ["Status is 200", "status", "equals", "200"]
       - attrs: { disabled: false }
-        row: ["Has user id", "body.id", "exists", ""]
+        row: ["Has user id", "body.id", "exists", null]
       - attrs: { disabled: false }
         row: ["Name is John", "body.name", "equals", "John"]
       - attrs: { disabled: false }
         row: ["Has items", "body.items", "contains", "product"]
       - attrs: { disabled: true }
-        row: ["Response time", "responseTime", "lessThan", "500"]
+        row: ["Response time", "responseTime", "less-than", "500"]
 ---
 ```
 
@@ -43,14 +43,23 @@ Row format: `[description, field, operator, expected-value]`
 | Operator | Description | Example expected |
 |----------|-------------|-----------------|
 | `equals` | Exact match | `"200"`, `"John"` |
-| `notEquals` | Does not match | `"error"` |
+| `not-equals` | Does not match | `"error"` |
 | `contains` | String contains | `"success"` |
-| `notContains` | Does not contain | `"error"` |
-| `exists` | Field is present (non-null) | `""` (leave empty) |
-| `notExists` | Field is absent or null | `""` |
+| `not-contains` | Does not contain | `"error"` |
+| `exists` | Field is present (non-null) | `null` (leave null) |
+| `not-exists` | Field is absent or null | `null` |
 | `matches` | Regex match | `"^[0-9]+$"` |
-| `greaterThan` | Numeric greater than | `"0"` |
-| `lessThan` | Numeric less than | `"1000"` |
+| `greater-than` | Numeric greater than | `"0"` |
+| `less-than` | Numeric less than | `"1000"` |
+| `greater-equal` | Numeric greater than or equal | `"200"` |
+| `less-equal` | Numeric less than or equal | `"500"` |
+| `starts-with` | String starts with | `"Bearer"` |
+| `ends-with` | String ends with | `".json"` |
+| `is-empty` | Value is empty string, null, or empty array | `null` |
+| `not-empty` | Value is not empty | `null` |
+| `is-truthy` | Value is truthy | `null` |
+| `is-falsy` | Value is falsy | `null` |
+| `type-is` | Typeof check | `"string"`, `"number"`, `"object"` |
 
 ### Common Assertion Patterns
 
@@ -59,17 +68,26 @@ Row format: `[description, field, operator, expected-value]`
 row: ["Success response", "status", "equals", "200"]
 
 # Check a body field exists
-row: ["Has ID", "body.id", "exists", ""]
+row: ["Has ID", "body.id", "exists", null]
 
 # Check a body field value
 row: ["Correct name", "body.name", "equals", "John Doe"]
 
 # Check response time under 500ms
-row: ["Fast response", "responseTime", "lessThan", "500"]
+row: ["Fast response", "responseTime", "less-than", "500"]
 
 # Check header value
 row: ["JSON content type", "headers.content-type", "contains", "application/json"]
 
 # Check nested field
-row: ["Has email", "body.user.email", "exists", ""]
+row: ["Has email", "body.user.email", "exists", null]
+
+# Check field does not exist
+row: ["No error field", "body.error", "not-exists", null]
+
+# Check string starts with
+row: ["Bearer token", "headers.authorization", "starts-with", "Bearer"]
+
+# Check value type
+row: ["ID is number", "body.id", "type-is", "number"]
 ```
