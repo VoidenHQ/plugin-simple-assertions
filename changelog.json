@@ -1,5 +1,15 @@
 [
   {
+    "version": "v1.0.2",
+    "date": "03/07/2026",
+    "title": "Skill Documentation Update",
+    "changes": {
+      "Improved": [
+        "AI skill documentation updated with accurate operator names (hyphenated form), correct node schema, and expanded examples for in-editor guidance"
+      ]
+    }
+  },
+  {
     "version": "v1.0.1",
     "date": "09/06/2026",
     "title": "Assertion Engine & Body Parsing Fixes",
