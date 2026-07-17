@@ -86,6 +86,15 @@ export default function createSimpleAssertionsPlugin(context: PluginContext) {
         'assertion-results': 'Assertion Results',
       });
 
+      // Root path for now — a per-block deep link path will be added later.
+      (context as any).registerBlockOutlineMeta({
+        'assertions-table': {
+          label: 'Assertions Table',
+          icon: 'ListChecks',
+          docsUrl: 'https://docs.voiden.md/docs/core-features-section/voiden-blocks/assertion-block',
+        },
+      });
+
       // Register block owner
       context.paste.registerBlockOwner({
         blockType: 'assertions-table',
