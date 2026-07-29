@@ -1,6 +1,6 @@
 {
   "name": "@voiden/plugin-simple-assertions",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "private": false,
   "description": "Add simple assertion testing to your HTTP requests with an easy-to-use table interface",

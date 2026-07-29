@@ -226,6 +226,11 @@ export default function createSimpleAssertionsPlugin(context: PluginContext) {
         component: SimpleAssertionsHelp,
       });
 
+      // Inline block "?" help tooltip (RequestBlockHeader)
+      (context as any).registerBlockHelp?.({
+        'assertions-table': SimpleAssertionsHelp,
+      });
+
       // Expose helper functions for other plugins to use
       context.exposeHelpers({
         enhanceResponseWithAssertions,

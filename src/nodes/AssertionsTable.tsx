@@ -1,7 +1,6 @@
 /* eslint-disable react/display-name */
 import { mergeAttributes, Node, NodeViewProps } from "@tiptap/core";
 import { NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
-import { SimpleAssertionsHelp } from "../help";
 
 // Base table wrapper node for assertions
 const TableWrapperNode = Node.create({
@@ -32,7 +31,7 @@ const createNodeView =
           <RequestBlockHeader
             title={title}
             editor={editor}
-            helpContent={<SimpleAssertionsHelp />}
+            blockType="assertions-table"
             importedDocumentId={node.attrs.importedFrom}
           />
           <div
