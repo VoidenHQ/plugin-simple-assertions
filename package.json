@@ -9,6 +9,9 @@
     "build": "node build.mjs",
     "release": "node build.mjs && node generate-manifest.mjs"
   },
+  "dependencies": {
+    "lossless-json": "^4.3.0"
+  },
   "peerDependencies": {
     "@voiden/sdk": "1.0.10",
     "react": "^18.2.0",

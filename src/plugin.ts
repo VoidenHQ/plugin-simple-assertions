@@ -8,6 +8,7 @@ type PluginContext = CorePluginContext;
 import { insertAssertionsTable } from "./lib/utils.js";
 import { postProcessAssertionsHook } from "./lib/pipelineHook.js";
 import { enhanceResponseWithAssertions } from "./lib/responseEnhancer.js";
+import { getResponseFieldSuggestions } from "./lib/responseFieldSuggestions.js";
 
 export default function createSimpleAssertionsPlugin(context: PluginContext) {
 
@@ -109,17 +110,31 @@ export default function createSimpleAssertionsPlugin(context: PluginContext) {
         },
       });
 
-      // Register table cell autocomplete suggestions for assertions
+      // Fixed keyword suggestions for the Field column — always offered,
+      // response or not.
+      const staticFieldSuggestions = [
+        { label: 'status', description: 'HTTP status code' },
+        { label: 'statusText', description: 'HTTP status text' },
+        { label: 'body', description: 'Response body' },
+        { label: 'header.', description: 'Response header (e.g. header.Content-Type)' },
+        { label: 'responseTime', description: 'Response time in ms' },
+        { label: 'body.', description: 'JSON path (e.g. body.data[0].id)' },
+      ];
+
+      // Register table cell autocomplete suggestions for assertions.
+      // Column 1 (Field) is registered as a function — issue #548 — so it
+      // can append real `body.<path>` / `header.<Name>` suggestions pulled
+      // from the current tab's last response on top of the static list
+      // above. `@voiden/sdk`'s published TableSuggestionsConfig type only
+      // declares the static-array form; the host app (apps/ui/src/plugins.tsx)
+      // already supports a function per column at runtime, so this is cast
+      // through until the SDK's types catch up.
       context.registerTableSuggestions('assertions-table', {
         // Col 0 = Description (no suggestions)
-        1: [ // Col 1 = Field
-          { label: 'status', description: 'HTTP status code' },
-          { label: 'statusText', description: 'HTTP status text' },
-          { label: 'body', description: 'Response body' },
-          { label: 'header.', description: 'Response header (e.g. header.Content-Type)' },
-          { label: 'responseTime', description: 'Response time in ms' },
-          { label: 'body.', description: 'JSON path (e.g. body.data[0].id)' },
-        ],
+        1: (({ tabId }: { rowContext: Record<number, string>; tabId?: string }) => [
+          ...staticFieldSuggestions,
+          ...getResponseFieldSuggestions(tabId),
+        ]) as any,
         2: [ // Col 2 = Operator
           { label: 'equals', description: 'Strict equality' },
           { label: 'not-equals', description: 'Not equal' },
