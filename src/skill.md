@@ -2,6 +2,10 @@
 
 Provides the `assertions-table` block for writing test assertions against HTTP responses. Insert with `/assertions` slash command.
 
+> **Not currently enforced as singleton** by the app, but one `assertions-table` per section/request is still the recommended shape for readability — add more rows to the existing table rather than inserting a second `assertions-table` for the same request.
+>
+> **Operator caveat — `contains` / `not-contains`:** these only match against **string** and **array** fields. They do not search inside a plain **object** field (e.g. checking whether `body.user` "contains" something) — that's expected behavior, not a bug. Pick a more specific field path (e.g. `body.user.email`) when the target is an object.
+
 ### assertions-table — Response Assertions
 
 ```yaml

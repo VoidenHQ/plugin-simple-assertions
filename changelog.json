@@ -1,5 +1,15 @@
 [
   {
+    "version": "v1.0.5",
+    "date": "24/08/2026",
+    "title": "Docs: Skill Clarifies Assertion Table Rules and the contains Operator",
+    "changes": {
+      "Fixed": [
+        "The bundled skill.md now clarifies that assertions-table is not currently enforced as singleton by the app (though one per section/request remains the recommended shape), and that the contains/not-contains operators only match string and array fields, not plain object fields — a limitation that was previously being reported as a bug when tested against an object field. Both are expected behavior, now documented as such."
+      ]
+    }
+  },
+  {
     "version": "v1.0.4",
     "date": "29/07/2026",
     "title": "Inline Block Help",
