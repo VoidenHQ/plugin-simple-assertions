@@ -117,6 +117,7 @@ export default function createSimpleAssertionsPlugin(context: PluginContext) {
         { label: 'statusText', description: 'HTTP status text' },
         { label: 'body', description: 'Response body' },
         { label: 'header.', description: 'Response header (e.g. header.Content-Type)' },
+        { label: 'requestHeader.', description: 'Request header sent (e.g. requestHeader.Authorization)' },
         { label: 'responseTime', description: 'Response time in ms' },
         { label: 'body.', description: 'JSON path (e.g. body.data[0].id)' },
       ];

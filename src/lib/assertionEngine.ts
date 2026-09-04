@@ -29,6 +29,13 @@ export interface AssertionContext {
     contentType: string | null;
     timing?: { duration: number };
   };
+  // Optional — headers actually sent with the request (from
+  // RestApiResponseState.requestMeta.headers). Absent for any context built
+  // before this existed, so extractFieldValue treats a missing `request` as
+  // "no request headers available" rather than throwing.
+  request?: {
+    headers: Array<{ key: string; value: string }>;
+  };
 }
 
 /**
@@ -36,7 +43,8 @@ export interface AssertionContext {
  * Supports:
  * - JSONPath-like syntax: response.body.data[0].id
  * - Special keywords: status, statusText, responseTime
- * - Header access: header.Content-Type
+ * - Response header access: header.Content-Type
+ * - Request header access: requestHeader.Authorization
  */
 export function extractFieldValue(field: string, context: AssertionContext): any {
   const normalizedField = field.trim();
@@ -50,6 +58,16 @@ export function extractFieldValue(field: string, context: AssertionContext): any
   }
   if (normalizedField === 'responseTime' || normalizedField === 'duration') {
     return context.response.timing?.duration || 0;
+  }
+
+  // Handle request header access: requestHeader.Authorization or requestHeaders.Authorization
+  if (normalizedField.startsWith('requestHeader.') || normalizedField.startsWith('requestHeaders.')) {
+    const parts = normalizedField.split('.');
+    const headerName = parts[1];
+    const header = context.request?.headers.find(
+      (h) => h.key.toLowerCase() === headerName.toLowerCase()
+    );
+    return header?.value;
   }
 
   // Handle header access: header.Content-Type or headers.Content-Type

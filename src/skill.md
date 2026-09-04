@@ -40,6 +40,7 @@ Row format: `[description, field, operator, expected-value]`
 | `body.field` | JSONPath into response body |
 | `body.nested.field` | Nested JSONPath |
 | `headers.content-type` | Response header value |
+| `requestHeader.name` | Header actually sent with the request (e.g. `requestHeader.Authorization`) |
 | `responseTime` | Response time in milliseconds |
 
 ### Operators
@@ -91,6 +92,9 @@ row: ["No error field", "body.error", "not-exists", null]
 
 # Check string starts with
 row: ["Bearer token", "headers.authorization", "starts-with", "Bearer"]
+
+# Check a header actually sent with the request
+row: ["Auth header sent", "requestHeader.Authorization", "exists", null]
 
 # Check value type
 row: ["ID is number", "body.id", "type-is", "number"]

@@ -1,6 +1,7 @@
 /* eslint-disable react/display-name */
 import { mergeAttributes, Node, NodeViewProps } from "@tiptap/core";
 import { NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
+import { ResponseFieldPicker } from "../components/ResponseFieldPicker";
 
 // Base table wrapper node for assertions
 const TableWrapperNode = Node.create({
@@ -23,7 +24,7 @@ const TableWrapperNode = Node.create({
 
 const createNodeView =
   (title: string, RequestBlockHeader: any, openFile?: (relativePath: string) => Promise<void>) =>
-  ({ editor, node }: NodeViewProps) => {
+  ({ editor, node, getPos }: NodeViewProps) => {
     const isEditable = !node?.attrs?.importedFrom;
     return (
       <NodeViewWrapper spellCheck="false" className="my-3">
@@ -42,6 +43,10 @@ const createNodeView =
           >
             <NodeViewContent />
           </div>
+          {/* issue #548: generate assertion rows straight from this section's
+              response, right where the table lives — imported/read-only
+              tables skip it, same as the table content itself above. */}
+          {isEditable && <ResponseFieldPicker editor={editor} node={node} getPos={getPos} />}
         </div>
       </NodeViewWrapper>
     );

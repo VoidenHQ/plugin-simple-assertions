@@ -232,6 +232,13 @@ export async function postProcessAssertionsHook(context: any): Promise<void> {
         contentType: responseState.contentType,
         timing: responseState.timing,
       },
+      // Headers actually sent with the request — RestApiResponseState
+      // already carries these (populated by the platform alongside the
+      // response), so requestHeader.<Name> assertions have real data to
+      // check against.
+      request: {
+        headers: responseState.requestMeta?.headers || [],
+      },
     };
 
     // Execute all assertions

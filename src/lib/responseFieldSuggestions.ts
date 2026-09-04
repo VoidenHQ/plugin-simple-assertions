@@ -4,8 +4,9 @@
  * assertions; autocomplete based on response structure).
  *
  * Reads the last response stored for the tab the assertions table lives in
- * and turns it into concrete `body.<path>` / `header.<Name>` suggestions,
- * on top of the fixed keyword list already registered in plugin.ts.
+ * and turns it into concrete `body.<path>` / `header.<Name>` (response
+ * headers) / `requestHeader.<Name>` (headers actually sent) suggestions, on
+ * top of the fixed keyword list already registered in plugin.ts.
  *
  * Known limitation: useResponseStore.getResponse(tabId) returns the
  * *latest* section's response for the tab, not necessarily the section the
@@ -26,7 +27,10 @@ export interface FieldSuggestion {
   description?: string;
 }
 
-const MAX_PATHS = 200;
+// Exported so ResponseFieldPicker.tsx (issue #548's "generate from response"
+// panel on the assertions table itself) can reuse the same caps/flattening
+// instead of a second copy.
+export const MAX_PATHS = 200;
 const MAX_DEPTH = 6;
 const MAX_ARRAY_ITEMS = 3; // sample only the first few items of long arrays
 
@@ -39,7 +43,7 @@ const isSafeIdentifier = (key: string) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)
  * Capped on depth and total path count so a huge/deeply-nested response
  * body can't stall the UI while typing.
  */
-function flattenJsonPaths(value: unknown): Array<{ path: string; value: unknown }> {
+export function flattenJsonPaths(value: unknown): Array<{ path: string; value: unknown }> {
   const results: Array<{ path: string; value: unknown }> = [];
 
   const walk = (node: unknown, path: string, depth: number) => {
@@ -82,7 +86,7 @@ function previewValue(value: unknown): string {
 }
 
 /** Find the `response-body` node's raw body string inside a stored responseDoc. */
-function getResponseBodyString(responseDoc: any): string | null {
+export function getResponseBodyString(responseDoc: any): string | null {
   const responseDocNode = responseDoc?.content?.find((n: any) => n?.type === "response-doc");
   const bodyNode = responseDocNode?.content?.find((n: any) => n?.type === "response-body");
   const body = bodyNode?.attrs?.body;
@@ -90,9 +94,16 @@ function getResponseBodyString(responseDoc: any): string | null {
 }
 
 /** Find the `response-headers` node's header list inside a stored responseDoc. */
-function getResponseHeaders(responseDoc: any): Array<{ key: string; value: string }> {
+export function getResponseHeaders(responseDoc: any): Array<{ key: string; value: string }> {
   const responseDocNode = responseDoc?.content?.find((n: any) => n?.type === "response-doc");
   const headersNode = responseDocNode?.content?.find((n: any) => n?.type === "response-headers");
+  return Array.isArray(headersNode?.attrs?.headers) ? headersNode.attrs.headers : [];
+}
+
+/** Find the `request-headers` node's header list (headers actually sent) inside a stored responseDoc. */
+export function getRequestHeaders(responseDoc: any): Array<{ key: string; value: string }> {
+  const responseDocNode = responseDoc?.content?.find((n: any) => n?.type === "response-doc");
+  const headersNode = responseDocNode?.content?.find((n: any) => n?.type === "request-headers");
   return Array.isArray(headersNode?.attrs?.headers) ? headersNode.attrs.headers : [];
 }
 
@@ -118,6 +129,14 @@ export function getResponseFieldSuggestions(tabId: string | undefined): FieldSug
     if (!header?.key) continue;
     suggestions.push({
       label: `header.${header.key}`,
+      description: previewValue(header.value ?? ""),
+    });
+  }
+
+  for (const header of getRequestHeaders(responseDoc)) {
+    if (!header?.key) continue;
+    suggestions.push({
+      label: `requestHeader.${header.key}`,
       description: previewValue(header.value ?? ""),
     });
   }
