@@ -1,5 +1,24 @@
 [
   {
+    "version": "v1.1.0",
+    "date": "04/09/2026",
+    "title": "Generate Assertions Directly From the Response",
+    "changes": {
+      "Added": [
+        "A \"Generate from response\" panel now lives right on the assertions table itself — expand it to see the response body (as a collapsible JSON tree), response headers, and the request headers actually sent, each with a one-click \"+\" to add an assertion row for that field, or \"Generate all\" to add every field in a section at once.",
+        "Assertions can now check request headers too (requestHeader.<Name>), not just response headers (header.<Name>) — available both as a Field-column autocomplete suggestion and from the new panel.",
+        "The panel is scoped to the exact request section the table belongs to in multi-request .void files, and to the table it's rendered on — never a different request's response or a different table."
+      ],
+      "Fixed": [
+        "Generating from an unchanged response no longer creates duplicate assertion rows on repeat clicks — a field that already has an assertion is skipped (shown with a check instead of \"+\").",
+        "Generating a row no longer leaves a dangling empty row behind (e.g. the default table's leftover blank row is cleaned up as part of the same action)."
+      ],
+      "Changed": [
+        "The panel's sections (Request Headers / Response Headers / Body) are independently collapsible, and every toggle is keyboard-operable (Tab + Enter/Space), not click-only — Escape collapses the panel."
+      ]
+    }
+  },
+  {
     "version": "v1.0.5",
     "date": "24/08/2026",
     "title": "Docs: Skill Clarifies Assertion Table Rules and the contains Operator",
