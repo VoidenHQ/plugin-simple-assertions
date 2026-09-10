@@ -97,8 +97,14 @@ export function extractFieldValue(field: string, context: AssertionContext): any
     return context.response.body;
   }
 
-  if (normalizedField.startsWith('body.') || normalizedField.startsWith('response.body.')) {
-    const bodyPath = normalizedField.replace(/^(response\.)?body\./, '');
+  // "body[" (no dot) matters too — a body whose top-level key itself needs
+  // bracket notation (e.g. a key with a dash) generates a path like
+  // `body["a-key"]` with nothing between "body" and the bracket at all.
+  if (
+    normalizedField.startsWith('body.') || normalizedField.startsWith('body[') ||
+    normalizedField.startsWith('response.body.') || normalizedField.startsWith('response.body[')
+  ) {
+    const bodyPath = normalizedField.replace(/^(response\.)?body\.?/, '');
     return extractFromObject(context.response.body, bodyPath);
   }
 
@@ -114,13 +120,25 @@ export function extractFieldValue(field: string, context: AssertionContext): any
 
 /**
  * Extract value from nested object using path notation
- * Supports: obj.prop, obj.arr[0], obj.arr[0].prop
+ * Supports: obj.prop, obj.arr[0], obj.arr[0].prop, obj["key-with-dashes"]
  */
 function extractFromObject(obj: any, path: string): any {
   if (!obj) return undefined;
 
-  // Parse path and handle array notation
-  const parts = path.split(/\.|\[/).map(p => p.replace(/\]$/, ''));
+  // Parse path and handle array notation. Bracket segments are stripped of
+  // their trailing `]` and, when quoted (e.g. ["sec-fetch-mode"] — the form
+  // generated for any key that isn't a plain identifier, see childSegment()
+  // in ResponseFieldPicker.tsx / responseFieldSuggestions.ts), their
+  // surrounding quotes too — otherwise the literal quote characters end up
+  // part of the looked-up key and the lookup always misses.
+  // .filter(Boolean) drops the leading empty segment split() produces when
+  // the path starts right at a bracket (e.g. ["a-key"].rest — no leading
+  // dot to split on before the "["), which would otherwise look up an
+  // empty-string key first and immediately dead-end the whole lookup.
+  const parts = path
+    .split(/\.|\[/)
+    .map(p => p.replace(/\]$/, '').replace(/^(["'])(.*)\1$/, '$2'))
+    .filter(Boolean);
 
   let current = obj;
   for (const part of parts) {
