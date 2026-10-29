@@ -34,11 +34,14 @@ import {
   getResponseHeaders,
   MAX_PATHS,
 } from "../lib/responseFieldSuggestions";
-import { appendRowToTable, buildAssertionRowJson, getExistingFields } from "../lib/assertionRowInsert";
+import { appendRowsToTable, appendRowToTable, buildAssertionRowJson, getExistingFields } from "../lib/assertionRowInsert";
 
 /** Result of trying to add one field: added a new row, skipped because that
  * field already has a row, or the insert itself failed. */
 type AddFieldOutcome = "added" | "duplicate" | "failed";
+
+/** Adds a row for every leaf not yet asserted; returns how many were added, or -1 if the insert failed. */
+type AddLeaves = (leaves: Leaf[]) => number;
 
 const MAX_ARRAY_ITEMS_GENERATE = 3; // how many array items "Generate all" samples
 const AUTO_COLLAPSE_CHILD_COUNT = 20; // objects/arrays past this size start collapsed
@@ -173,19 +176,41 @@ export const ResponseFieldPicker: React.FC<ResponseFieldPickerProps> = ({ editor
   // response can't pile up duplicate rows.
   const existingFields = React.useMemo(() => getExistingFields(node), [node]);
 
+  const rowFor = (field: string, expectedValue: string) =>
+    buildAssertionRowJson({ description: `Assert ${field}`, field, operator: "equals", expectedValue });
+
   const handleAddField = React.useCallback(
     (field: string, expectedValue: string): AddFieldOutcome => {
       if (existingFields.has(field)) return "duplicate";
-      const rowJson = buildAssertionRowJson({
-        description: `Assert ${field}`,
-        field,
-        operator: "equals",
-        expectedValue,
-      });
-      return appendRowToTable(editor, getPos(), node, rowJson) ? "added" : "failed";
+      return appendRowToTable(editor, getPos(), node, rowFor(field, expectedValue)) ? "added" : "failed";
     },
     [editor, getPos, node, existingFields]
   );
+
+  // Bulk add in one transaction, so it's a single undo step.
+  const handleAddLeaves = React.useCallback<AddLeaves>(
+    (leaves) => {
+      const fresh = leaves.filter((l) => !existingFields.has(l.path));
+      if (fresh.length === 0) return 0;
+      const rows = fresh.map((l) => rowFor(l.path, assertableString(l.value)));
+      return appendRowsToTable(editor, getPos(), node, rows) ? fresh.length : -1;
+    },
+    [editor, getPos, node, existingFields]
+  );
+
+  // "Generate all" across every section (#595): request headers, response headers, then body.
+  const allLeaves = React.useMemo(
+    () => [...requestHeaderLeaves, ...responseHeaderLeaves, ...bodyLeaves],
+    [requestHeaderLeaves, responseHeaderLeaves, bodyLeaves]
+  );
+  const newLeafCount = React.useMemo(() => allLeaves.filter((l) => !existingFields.has(l.path)).length, [allLeaves, existingFields]);
+  const [generateAllStatus, setGenerateAllStatus] = React.useState<RowStatus>({ state: "idle" });
+  const handleGenerateEverything = () => {
+    const added = handleAddLeaves(allLeaves);
+    if (added === 0) return;
+    setGenerateAllStatus({ state: added > 0 ? "ok" : "error" });
+    window.setTimeout(() => setGenerateAllStatus({ state: "idle" }), 2000);
+  };
 
   const toggleButtonRef = React.useRef<HTMLButtonElement>(null);
 
@@ -207,21 +232,36 @@ export const ResponseFieldPicker: React.FC<ResponseFieldPickerProps> = ({ editor
 
   return (
     <div className="border-t border-border" style={{ userSelect: "text" }} contentEditable={false} onKeyDown={handleKeyDown}>
-      <button
-        ref={toggleButtonRef}
-        onClick={() => setExpanded((e) => !e)}
-        aria-expanded={expanded}
-        className="w-full flex items-center gap-1.5 px-3 py-1.5 text-xs text-comment hover:bg-active transition-colors"
-        style={{ cursor: "pointer" }}
-      >
-        {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        <Sparkles size={12} />
-        Generate from response
-      </button>
+      <div className="flex items-center">
+        <button
+          ref={toggleButtonRef}
+          onClick={() => setExpanded((e) => !e)}
+          aria-expanded={expanded}
+          className="flex-1 flex items-center gap-1.5 px-3 py-1.5 text-xs text-comment hover:bg-active transition-colors"
+          style={{ cursor: "pointer" }}
+        >
+          {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <Sparkles size={12} />
+          Generate from response
+        </button>
+        {hasAnything && allLeaves.length > 0 && (
+          <GenerateAllButton
+            newCount={newLeafCount}
+            status={generateAllStatus}
+            onClick={handleGenerateEverything}
+            title={
+              newLeafCount === 0
+                ? "Every field in the request headers, response headers and body already has an assertion"
+                : `Add an assertion row for all ${newLeafCount} new fields: request headers, response headers and body`
+            }
+            className="mr-2"
+          />
+        )}
+      </div>
       {expanded && (
         hasAnything ? (
           <div className="text-xs" style={{ fontFamily: "var(--font-family-mono)" }}>
-            <FieldGroup title="Request Headers" leaves={requestHeaderLeaves} existingFields={existingFields} onAddField={handleAddField} defaultCollapsed>
+            <FieldGroup title="Request Headers" leaves={requestHeaderLeaves} existingFields={existingFields} onAddLeaves={handleAddLeaves} defaultCollapsed>
               {requestHeaders.filter((h) => h?.key).map((h) => (
                 <TreeNode
                   key={h.key}
@@ -234,7 +274,7 @@ export const ResponseFieldPicker: React.FC<ResponseFieldPickerProps> = ({ editor
                 />
               ))}
             </FieldGroup>
-            <FieldGroup title="Response Headers" leaves={responseHeaderLeaves} existingFields={existingFields} onAddField={handleAddField} defaultCollapsed>
+            <FieldGroup title="Response Headers" leaves={responseHeaderLeaves} existingFields={existingFields} onAddLeaves={handleAddLeaves} defaultCollapsed>
               {responseHeaders.filter((h) => h?.key).map((h) => (
                 <TreeNode
                   key={h.key}
@@ -247,7 +287,7 @@ export const ResponseFieldPicker: React.FC<ResponseFieldPickerProps> = ({ editor
                 />
               ))}
             </FieldGroup>
-            <FieldGroup title="Body" leaves={bodyLeaves} existingFields={existingFields} onAddField={handleAddField}>
+            <FieldGroup title="Body" leaves={bodyLeaves} existingFields={existingFields} onAddLeaves={handleAddLeaves}>
               {parsedBody !== null && (
                 <TreeNode value={parsedBody} path="body" depth={0} existingFields={existingFields} onAddField={handleAddField} />
               )}
@@ -260,6 +300,37 @@ export const ResponseFieldPicker: React.FC<ResponseFieldPickerProps> = ({ editor
         )
       )}
     </div>
+  );
+};
+
+/** "Generate all" / "All asserted" with a brief ✓ / ✗ after a click; shared by the panel header and each section. */
+const GenerateAllButton: React.FC<{
+  newCount: number;
+  status: RowStatus;
+  onClick: () => void;
+  title: string;
+  className?: string;
+}> = ({ newCount, status, onClick, title, className = "" }) => {
+  const done = newCount === 0;
+  return (
+    <button
+      onClick={onClick}
+      disabled={done}
+      className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs text-comment ${done ? "opacity-50" : "hover:bg-active"} ${className}`}
+      style={{ cursor: done ? "default" : "pointer" }}
+      title={title}
+    >
+      {done ? (
+        <CheckCheck size={11} />
+      ) : status.state === "ok" ? (
+        <Check size={11} className="text-status-success" />
+      ) : status.state === "error" ? (
+        <X size={11} className="text-status-error" />
+      ) : (
+        <Plus size={11} />
+      )}
+      {done ? "All asserted" : "Generate all"}
+    </button>
   );
 };
 
@@ -280,22 +351,19 @@ const FieldGroup: React.FC<{
   title: string;
   leaves: Leaf[];
   existingFields: Set<string>;
-  onAddField: (field: string, expectedValue: string) => AddFieldOutcome;
+  onAddLeaves: AddLeaves;
   children: React.ReactNode;
   defaultCollapsed?: boolean;
-}> = ({ title, leaves, existingFields, onAddField, children, defaultCollapsed = false }) => {
+}> = ({ title, leaves, existingFields, onAddLeaves, children, defaultCollapsed = false }) => {
   const [collapsed, setCollapsed] = React.useState(defaultCollapsed);
   const [status, setStatus] = React.useState<RowStatus>({ state: "idle" });
   const newLeaves = React.useMemo(() => leaves.filter((l) => !existingFields.has(l.path)), [leaves, existingFields]);
   const allAsserted = leaves.length > 0 && newLeaves.length === 0;
 
   const handleGenerateAll = () => {
-    if (newLeaves.length === 0) return;
-    let addedAny = false;
-    for (const leaf of newLeaves) {
-      if (onAddField(leaf.path, assertableString(leaf.value)) === "added") addedAny = true;
-    }
-    setStatus({ state: addedAny ? "ok" : "error" });
+    const added = onAddLeaves(newLeaves);
+    if (added === 0) return;
+    setStatus({ state: added > 0 ? "ok" : "error" });
     window.setTimeout(() => setStatus({ state: "idle" }), 2000);
   };
 
@@ -316,24 +384,12 @@ const FieldGroup: React.FC<{
             {newLeaves.length !== leaves.length && !allAsserted ? ` (${newLeaves.length} new)` : ""}
           </span>
         </button>
-        <button
+        <GenerateAllButton
+          newCount={allAsserted ? 0 : newLeaves.length}
+          status={status}
           onClick={handleGenerateAll}
-          disabled={allAsserted}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded ${allAsserted ? "text-comment opacity-50" : "text-comment hover:bg-active"}`}
-          style={{ cursor: allAsserted ? "default" : "pointer" }}
           title={allAsserted ? `Every field in ${title} already has an assertion` : `Add an assertion row for every new field in ${title}`}
-        >
-          {allAsserted ? (
-            <CheckCheck size={11} />
-          ) : status.state === "ok" ? (
-            <Check size={11} className="text-status-success" />
-          ) : status.state === "error" ? (
-            <X size={11} className="text-status-error" />
-          ) : (
-            <Plus size={11} />
-          )}
-          {allAsserted ? "All asserted" : "Generate all"}
-        </button>
+        />
       </div>
       {!collapsed && <div className="px-2 py-1 max-h-64 overflow-auto">{children}</div>}
     </div>

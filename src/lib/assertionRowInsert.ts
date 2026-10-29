@@ -84,6 +84,15 @@ function isRowEmpty(row: any): boolean {
  * >=1 row post-replace, so that minimum is never actually violated.
  */
 export function appendRowToTable(editor: any, tablePos: number, tableNode: any, rowJson: any): boolean {
+  return appendRowsToTable(editor, tablePos, tableNode, [rowJson]);
+}
+
+/**
+ * Same as appendRowToTable(), for many rows at once: one transaction, so a
+ * bulk "Generate all" is a single undo step instead of one per row (#595).
+ */
+export function appendRowsToTable(editor: any, tablePos: number, tableNode: any, rowsJson: any[]): boolean {
+  if (rowsJson.length === 0) return false;
   const currentTable = editor.state.doc.nodeAt(tablePos) ?? tableNode;
   const realTable = currentTable?.firstChild; // assertions-table's one child is the real `table` node
   if (!realTable) return false;
@@ -96,6 +105,6 @@ export function appendRowToTable(editor: any, tablePos: number, tableNode: any, 
   const tableContentStart = tablePos + 2; // past assertions-table's own open token + table's open token
   const tableContentEnd = tableContentStart + realTable.content.size;
 
-  editor.chain().insertContentAt({ from: tableContentStart, to: tableContentEnd }, [...keptRowsJson, rowJson]).run();
+  editor.chain().insertContentAt({ from: tableContentStart, to: tableContentEnd }, [...keptRowsJson, ...rowsJson]).run();
   return true;
 }
