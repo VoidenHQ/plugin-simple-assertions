@@ -1,5 +1,19 @@
 [
   {
+    "version": "v1.2.0",
+    "date": "29/10/2026",
+    "title": "Generate All Assertions in One Click",
+    "changes": {
+      "Added": [
+        "\"Generate all\" adds assertions for request headers, response headers and response body in one click."
+      ],
+      "Fixed": [
+        "Assertions now run headlessly (voiden-runner, voiden-mcp) instead of being skipped with a \"Cannot find module '@voiden/sdk/shared'\" error.",
+        "A failing assertion now fails voiden-mcp tool verification instead of being reported as verified."
+      ]
+    }
+  },
+  {
     "version": "v1.1.0",
     "date": "04/09/2026",
     "title": "Generate Assertions Directly From the Response",
