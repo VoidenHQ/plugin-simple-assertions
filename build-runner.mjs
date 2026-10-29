@@ -16,12 +16,19 @@ await build({
   bundle: true,
   platform: 'node',
   format: 'cjs',
+  // jsonc-parser's default `main` is a UMD build with dynamic require()s
+  // esbuild can't follow; its ESM `module` build bundles cleanly.
+  mainFields: ['module', 'main'],
   outfile: `dist/${pluginId}-runner.js`,
   external: [
     'node:*','fs','path','os','http','https','net','crypto',
     'child_process','worker_threads','stream','events','util',
     'url','buffer','readline','tty','assert','zlib',
-    '@voiden/executors','@voiden/sdk','electron',
+    // Only @voiden/sdk/runner stays external (type-only here). @voiden/sdk/shared
+    // (parseCookies) must be bundled: the runner is loaded from
+    // ~/.voiden/extensions/, where no @voiden/sdk package resolves, so an
+    // external require failed and every headless assertion was skipped.
+    '@voiden/executors','@voiden/sdk/runner','electron',
   ],
   minify: true,
 })
